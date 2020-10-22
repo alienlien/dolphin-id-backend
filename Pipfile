@@ -11,6 +11,7 @@ flake8 = "*"
 yapf = "*"
 isort = "*"
 rope = "*"
+requests = "*"
 
 [packages]
 flask = "*"
