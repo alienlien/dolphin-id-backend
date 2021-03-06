@@ -6,10 +6,13 @@ import shutil
 from collections import defaultdict
 from http import HTTPStatus
 import json
+import io
 
 import flask
 from flask import Flask, request
 from flask_cors import CORS
+from google.cloud import automl
+from google.protobuf.json_format import MessageToJson, MessageToDict
 
 app = Flask(__name__)
 CORS(app)
@@ -125,6 +128,63 @@ def save_data():
         )
         resp.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
         return resp
+
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    #     print(request.data)
+    #
+    #     if not request.data:
+    #         return flask.make_response({
+    #             'payload': [],
+    #         })
+
+    project_id = 'dolphin-170615'
+    location = 'us-central1'
+    model_id = 'IOD5909958562179710976'
+    file_path = '/Users/Alien/workspace/project/private/dolphin-id-backend/data/HL20100702_01_Gg_990702_97.jpg'
+
+    prediction_client = automl.PredictionServiceClient()
+
+    # Get the full path of the model.
+    model_full_id = automl.AutoMlClient.model_path(
+        project_id, location, model_id
+    )
+
+    # Read the file.
+    with open(file_path, "rb") as content_file:
+        content = content_file.read()
+
+
+#     image = automl.Image(image_bytes=content)
+
+    if request.data:
+        content = request.data
+
+    print(request.data)
+    print(request.get_data())
+    image = automl.Image(image_bytes=content)
+    payload = automl.ExamplePayload(image=image)
+
+    # params is additional domain-specific parameters.
+    # score_threshold is used to filter the result
+    # https://cloud.google.com/automl/docs/reference/rpc/google.cloud.automl.v1#predictrequest
+    params = {
+        'score_threshold': '0.01',
+    }
+
+    pred_req = automl.PredictRequest(
+        name=model_full_id,
+        payload=payload,
+        params=params,
+    )
+
+    pred_resp = prediction_client.predict(request=pred_req)
+    pred_resp_json = pred_resp.__class__.to_json(pred_resp)
+
+    resp = flask.make_response(json.loads(pred_resp_json))
+    resp.status_code = HTTPStatus.OK
+    return resp
 
 
 @app.route('/cp', methods=['GET'])
