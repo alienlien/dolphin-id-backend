@@ -17,6 +17,9 @@ requests = "*"
 flask = "*"
 flask_cors = "*"
 importlib-metadata = "==1.7.0"
+tensorflow = "*"
+pillow = "*"
+google-cloud-automl = "*"
 
 [requires]
 python_version = "3.6"
